@@ -1,0 +1,2381 @@
+---
+title: "FMOA_markdown"
+author: "Lauri Gurguryan"
+date: "2025-02-07"
+output: 
+  html_document:
+    theme: journal
+    code_folding: hide
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=TRUE, message=FALSE}
+# Load necessary libraries
+library(haven)
+library(dplyr)
+library(tidyr)
+library(readxl)
+library(gt)
+library(afex)
+library(emmeans)
+library(ggplot2)
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+**#########################**<br>
+**## DATA CLEAN/ORGANIZE ##**<br>
+**#########################**
+```{r}
+print ("See code below for data cleaning/organization")
+```
+
+</div>
+
+```{r}
+
+## CLEAN DATA & REORGANIZE FOR ANALYSIS 
+
+#Read in excel 
+data_orig <- read_excel("/Users/laurigurguryan/Desktop/FMOA/RawData_Study1ANDOANoAudFollowup_062013.xlsx", sheet = "Study1YA&OAANDNoAudOA_ForSPSS")
+
+# Create a new columns for the avg total # of CORRECT words recalled
+data_lg <- data_orig %>%
+  mutate(
+    AvgNumCORRECTWordsRecalled_SemTrial_SublistA = SemTrialsACorrect,
+    AvgNumCORRECTWordsRecalled_PhonoTrial_SublistA = PhonoTrialsACorrect, 
+    AvgNumCORRECTWordsRecalled_SemTrial_SublistB = SemTrialsBCorrect, 
+    AvgNumCORRECTWordsRecalled_PhonoTrial_SublistB = PhonoTrialsBCorrect,
+    AvgNumCORRECTWordsRecalled_SemTrial_SublistC = SemTrialsCCorrect, 
+    AvgNumCORRECTWordsRecalled_PhonoTrial_SublistC = PhonoTrialsCCorrect
+  )
+
+# Create a new columns for the avg total # of FMs + theme words recalled
+data_lg <- data_lg %>%
+  mutate(
+    AvgNumFMTHEMEWordsRecalled_SemTrial_SublistA = SemTrials_ThemeA + SemTrial_SemA, 
+    AvgNumFMTHEMEWordsRecalled_SemTrial_SublistB = SemTrials_ThemeB + SemTrial_SemB, 
+    AvgNumFMTHEMEWordsRecalled_SemTrial_SublistC = SemTrials_ThemeC + SemTrial_SemC, 
+    AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistA = PhonoTrials_ThemeA + PhonoTrial_PhonoA,
+    AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistB = PhonoTrials_ThemeB + PhonoTrial_PhonoB,
+    AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistC = PhonoTrials_ThemeC + PhonoTrial_PhonoC,
+    )
+
+# Compute and create a new columns for the avg total # words recalled
+data_lg <- data_lg %>%
+  mutate(
+    AvgNumWordsRecalled_SemTrial_SublistA = AvgNumCORRECTWordsRecalled_SemTrial_SublistA + AvgNumFMTHEMEWordsRecalled_SemTrial_SublistA, 
+    AvgNumWordsRecalled_SemTrial_SublistB = AvgNumCORRECTWordsRecalled_SemTrial_SublistB + AvgNumFMTHEMEWordsRecalled_SemTrial_SublistB, 
+    AvgNumWordsRecalled_SemTrial_SublistC = AvgNumCORRECTWordsRecalled_SemTrial_SublistC + AvgNumFMTHEMEWordsRecalled_SemTrial_SublistC, 
+    AvgNumWordsRecalled_PhonoTrial_SublistA = AvgNumCORRECTWordsRecalled_PhonoTrial_SublistA + AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistA, 
+    AvgNumWordsRecalled_PhonoTrial_SublistB = AvgNumCORRECTWordsRecalled_PhonoTrial_SublistB + AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistB, 
+    AvgNumWordsRecalled_PhonoTrial_SublistC = AvgNumCORRECTWordsRecalled_PhonoTrial_SublistC + AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistC
+    )
+
+# Compute and create a new column for proportion CORRECT which is computed by dividing the AvgNumCORRECTWordsRecalled from AvgNumWordsRecalled
+data_lg <- data_lg %>%
+  mutate(PropCORRECT_SemTrial_SublistA = AvgNumCORRECTWordsRecalled_SemTrial_SublistA / AvgNumWordsRecalled_SemTrial_SublistA, 
+         PropCORRECT_SemTrial_SublistB = AvgNumCORRECTWordsRecalled_SemTrial_SublistB / AvgNumWordsRecalled_SemTrial_SublistB, 
+         PropCORRECT_SemTrial_SublistC = AvgNumCORRECTWordsRecalled_SemTrial_SublistC / AvgNumWordsRecalled_SemTrial_SublistC, 
+         PropCORRECT_PhonoTrial_SublistA = AvgNumCORRECTWordsRecalled_PhonoTrial_SublistA / AvgNumWordsRecalled_PhonoTrial_SublistA, 
+         PropCORRECT_PhonoTrial_SublistB = AvgNumCORRECTWordsRecalled_PhonoTrial_SublistB / AvgNumWordsRecalled_PhonoTrial_SublistB, 
+         PropCORRECT_PhonoTrial_SublistC = AvgNumCORRECTWordsRecalled_PhonoTrial_SublistC / AvgNumWordsRecalled_PhonoTrial_SublistC, 
+         )
+
+# Compute and create a new column for proportion FM (including theme) which is computed by dividing the AvgNumFMTHEMEWordsRecalled from AvgNumWordsRecalled
+data_lg <- data_lg %>%
+  mutate(PropFM_SemTrial_SublistA = AvgNumFMTHEMEWordsRecalled_SemTrial_SublistA / AvgNumWordsRecalled_SemTrial_SublistA, 
+         PropFM_SemTrial_SublistB = AvgNumFMTHEMEWordsRecalled_SemTrial_SublistB / AvgNumWordsRecalled_SemTrial_SublistB, 
+         PropFM_SemTrial_SublistC = AvgNumFMTHEMEWordsRecalled_SemTrial_SublistC / AvgNumWordsRecalled_SemTrial_SublistC, 
+         PropFM_PhonoTrial_SublistA = AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistA / AvgNumWordsRecalled_PhonoTrial_SublistA, 
+         PropFM_PhonoTrial_SublistB = AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistB / AvgNumWordsRecalled_PhonoTrial_SublistB, 
+         PropFM_PhonoTrial_SublistC = AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistC / AvgNumWordsRecalled_PhonoTrial_SublistC, 
+  )
+
+# Create new df with columns for analysis 
+data_analysis <- data_lg %>%
+  select('Subject#', Study_1YA_2OA_3NoAudOA, 
+         AvgNumCORRECTWordsRecalled_SemTrial_SublistA, 
+         AvgNumCORRECTWordsRecalled_PhonoTrial_SublistA, 
+         AvgNumCORRECTWordsRecalled_SemTrial_SublistB, 
+         AvgNumCORRECTWordsRecalled_PhonoTrial_SublistB, 
+         AvgNumCORRECTWordsRecalled_SemTrial_SublistC, 
+         AvgNumCORRECTWordsRecalled_PhonoTrial_SublistC, 
+         AvgNumFMTHEMEWordsRecalled_SemTrial_SublistA, 
+         AvgNumFMTHEMEWordsRecalled_SemTrial_SublistB, 
+         AvgNumFMTHEMEWordsRecalled_SemTrial_SublistC, 
+         AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistA, 
+         AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistB,
+         AvgNumFMTHEMEWordsRecalled_PhonoTrial_SublistC, 
+         AvgNumWordsRecalled_SemTrial_SublistA, 
+         AvgNumWordsRecalled_SemTrial_SublistB,
+         AvgNumWordsRecalled_SemTrial_SublistC, 
+         AvgNumWordsRecalled_PhonoTrial_SublistA,  
+         AvgNumWordsRecalled_PhonoTrial_SublistB, 
+         AvgNumWordsRecalled_PhonoTrial_SublistC, 
+         PropCORRECT_SemTrial_SublistA, 
+         PropCORRECT_SemTrial_SublistB, 
+         PropCORRECT_SemTrial_SublistC, 
+         PropCORRECT_PhonoTrial_SublistA, 
+         PropCORRECT_PhonoTrial_SublistB, 
+         PropCORRECT_PhonoTrial_SublistC, 
+         PropFM_SemTrial_SublistA,
+         PropFM_SemTrial_SublistB, 
+         PropFM_SemTrial_SublistC, 
+         PropFM_PhonoTrial_SublistA,
+         PropFM_PhonoTrial_SublistB,
+         PropFM_PhonoTrial_SublistC
+         )
+
+# Pivot from wide format to long format 
+data_analysis_long <- data_analysis %>%
+  pivot_longer(
+    cols = -c(`Subject#`, Study_1YA_2OA_3NoAudOA),  
+    names_to = c("Measurement", "TrialType", "Sublist"),  
+    names_sep = "_" 
+  )
+# Rename Subject ID column name 
+data_analysis_long <- data_analysis_long %>%
+  rename(Subject = `Subject#`)
+
+# Add column for age group 
+data_analysis_long <- data_analysis_long %>%
+  mutate(Group = case_when(
+    Study_1YA_2OA_3NoAudOA == 1 ~ "YA",
+    Study_1YA_2OA_3NoAudOA %in% c(2, 3) ~ "OA"
+  ))
+```
+
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+**#####################**<br>
+**#####################**<br>
+**###### STUDY 1 ######**<br>
+**#####################**<br>
+**#####################**<br><br>
+
+**#######################**<br>
+**#TOTAL NUM RECALLED #**<br>
+**#######################**
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 1 (YAs + OAs) and Measurement = AvgNumWordsRecalled
+Study1_YAOA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(1, 2)) %>%
+  filter(Measurement == "AvgNumWordsRecalled")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study1_YAOA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study1_YAOA_data)
+colnames(Study1_YAOA_data)
+summary(Study1_YAOA_data)
+
+#Summary stats
+summary_stats <- Study1_YAOA_data %>%
+  group_by(Group, TrialType, Sublist) %>%
+  summarise(
+    Mean_NumWords = mean(value, na.rm = TRUE),
+    SD_NumWords = sd(value, na.rm = TRUE)
+  ) %>%
+  mutate(
+    TrialType = recode(TrialType, 
+                       "PhonoTrial" = "Phonological trials",
+                       "SemTrial" = "Semantic trials")
+  )
+
+#Print table 
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the total number of words recalled as a function of age, trial type (collapsed across sublist), and sublist"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_NumWords, SD_NumWords),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_NumWords = "Mean",
+    SD_NumWords = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_spanner_delim(delim = " ")
+
+#Plot 
+ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of recalled words as a function of age, condition, and sublist",
+    x = "Group",
+    y = "Average # of words",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of recalled words as a function of age,\n condition, and sublist",
+    x = "Group",
+    y = "Average # of words",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    # Facet label size
+    plot.margin = margin(1, 1, 1, 1, "cm")  # Add some margin to avoid text cut-off
+  )
+
+```
+```{r}
+# Treat variables as factors
+Study1_YAOA_data <- Study1_YAOA_data %>%
+  mutate(
+    TrialType = as.factor(TrialType),
+    Group = as.factor(Group),
+    Subject = as.factor(Subject)
+  )
+
+# Repeated measures ANOVA model
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study1_YAOA_data,  
+  within = c("TrialType", "Sublist")  ,
+  between = 'Group'
+)
+
+# Print ANOVA results
+summary(anova_results)
+print(anova_results)
+
+# Obtain estimated marginal means
+emmeans_results_Group <- emmeans(anova_results, ~ Group)
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_interaction <- emmeans(anova_results, ~ TrialType | Group)
+
+#print EMMs
+print(emmeans_results_Group)
+print(emmeans_results_TrialType)
+print(emmeans_results_Sublist)
+print(emmeans_results_interaction)
+
+# Perform pairwise comparisons
+pairs(emmeans_results_Group)
+pairs(emmeans_results_TrialType)
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_interaction)
+
+# Convert EMMs to data frames for plotting
+emmeans_results_Group_df <- as.data.frame(emmeans_results_Group)
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_interaction_df <- as.data.frame(emmeans_results_interaction)
+
+# Plot the main effect of Group
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Group",
+    x = "Group",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, fill = Group)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of Group",
+    x = "Group",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("OA" = "maroon", "YA" = "purple")) +  
+  theme_minimal()
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue")) +
+  theme_minimal()
+
+# Plot the main effect of Sublist
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+# Plot the interaction
+ggplot(emmeans_results_interaction_df, aes(x = TrialType, y = emmean, color = Group, shape = Group)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2) +
+  labs(
+    title = "Interaction effect of age and Trial Type",
+    x = "TrialType",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal() 
+
+ggplot(emmeans_results_interaction_df, aes(x = TrialType, y = emmean, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge", color = "black") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("OA" = "maroon", "YA" = "purple")) +  
+  scale_x_discrete(labels = c("Phono" = "Phonological trials", "Semantic" = "Semantic trials")) +
+  labs(
+    title = "Interaction effect between age group and condition on the average number of total words recalled",
+    x = "Condition",
+    y = "Estimated marginal mean",
+    fill = "Age group" 
+  ) +
+  theme_minimal()
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+**#####################**<br>
+**##TOTAL # CORRECT ##**<br>
+**#####################**
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 1 (YAs + OAs) and Measurement = AvgNumWordsRecalled
+Study1_YAOA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(1, 2)) %>%
+  filter(Measurement == "AvgNumCORRECTWordsRecalled")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study1_YAOA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study1_YAOA_data)
+colnames(Study1_YAOA_data)
+summary(Study1_YAOA_data)
+
+#Summary stats
+summary_stats <- Study1_YAOA_data %>%
+  group_by(Group, TrialType, Sublist) %>%
+  summarise(
+    Mean_NumWords = mean(value, na.rm = TRUE),
+    SD_NumWords = sd(value, na.rm = TRUE)
+  ) %>%
+  mutate(
+    TrialType = recode(TrialType, 
+                       "PhonoTrial" = "Phonological trials",
+                       "SemTrial" = "Semantic trials")
+  ) 
+
+#Print table 
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Total_Correct by Age, TrialType, and Sublist"
+  )
+
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the Total Number of Correct Words Recalled"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_NumWords, SD_NumWords),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_NumWords = "Mean",
+    SD_NumWords = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_NumWords, SD_NumWords)
+  )
+
+#Plot 
+ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of correctly recalled words as a function of age, condition,\nand sublist",
+    x = "Group",
+    y = "Average # of words",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of correctly recalled words as\na function of age, condition, and sublist",
+    x = "Group",
+    y = "Average # of words",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")  # Add some margin 
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA model
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study1_YAOA_data,  
+  within = c("TrialType", "Sublist")  ,
+  between = 'Group'
+)
+
+# Print ANOVA table
+summary(anova_results)
+print(anova_results)
+
+# Obtain estimated marginal means (EMMs) for the significant factors
+emmeans_results_Group <- emmeans(anova_results, ~ Group)
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_interaction <- emmeans(anova_results, ~ Group | TrialType)
+
+# Print EMMs
+print(emmeans_results_Group)
+print(emmeans_results_TrialType)
+print(emmeans_results_Sublist)
+print(emmeans_results_interaction)
+
+# Perform pairwise comparisons
+pairs(emmeans_results_Group)
+pairs(emmeans_results_TrialType)
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_interaction)
+
+# Convert EMMs to data frames for plotting
+emmeans_results_Group_df <- as.data.frame(emmeans_results_Group)
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_interaction_df <- as.data.frame(emmeans_results_interaction)
+
+#Plot main effect Group
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Group",
+    x = "Group",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, fill = Group)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of Group",
+    x = "Group",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("OA" = "maroon", "YA" = "purple")) +  
+  theme_minimal()
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue")) +
+  theme_minimal()
+
+# Plot the main effect of Sublist
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+# Plot the interaction
+ggplot(emmeans_results_interaction_df, aes(x = TrialType, y = emmean, color = Group, shape = Group)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2) +
+  labs(
+    title = "Interaction Effect of Group and Condition",
+    x = "Condition",
+    y = "Estimated marginal mean"
+  ) +
+  theme_minimal() 
+
+ggplot(emmeans_results_interaction_df, aes(x = TrialType, y = emmean, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge", color = "black") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("OA" = "maroon", "YA" = "purple")) +  
+  labs(
+    title = "Interaction effect of age group and condition on the average number of correct words recalled",
+    x = "Sublist",
+    y = "Estimated marginal mean", 
+    fill = "Age group"
+  ) +
+  theme_minimal()
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+###################<br>
+## PROP CORRECT ##<br>
+###################
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 1 (YAs + OAs) and Measurement = PropCORRECT
+Study1_YAOA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(1, 2)) %>%
+  filter(Measurement == "PropCORRECT")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study1_YAOA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study1_YAOA_data)
+colnames(Study1_YAOA_data)
+summary(Study1_YAOA_data)
+
+#Summary stats
+summary_stats1 <- Study1_YAOA_data %>%
+  group_by(Group, TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_CORRECT = mean(value, na.rm = TRUE),
+    SD_Prop_CORRECT = sd(value, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  mutate(
+    TrialType = recode(TrialType, 
+                       "PhonoTrial" = "Phonological trials",
+                       "SemTrial" = "Semantic trials")
+  )
+
+#Print table 
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of PropCorrect by TrialType and Sublist"
+  )
+
+# Print table in APA style
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = md("**Summary Statistics for Proportion Correct by Trial Type and Sublist**")
+  ) %>%
+  fmt_number(
+    columns = c("Mean_Prop_CORRECT", "SD_Prop_CORRECT"),
+    decimals = 2
+  ) %>%
+  cols_label(
+    Mean_Prop_CORRECT = "M",
+    SD_Prop_CORRECT = "SD",
+    Sublist = "Sublist",  
+    TrialType = "Trial type" 
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c("Mean_Prop_CORRECT", "SD_Prop_CORRECT")
+  ) %>%
+  tab_spanner(
+    label = "Summary Statistics",
+    columns = c("Mean_Prop_CORRECT", "SD_Prop_CORRECT")
+  ) %>%
+  fmt_missing(
+    columns = c("Mean_Prop_CORRECT", "SD_Prop_CORRECT"),
+    missing_text = "-"
+  )
+
+#Plot data like poster
+summary_stats2 <- Study1_YAOA_data %>%
+  group_by(Study_1YA_2OA_3NoAudOA, TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_CORRECT = mean(value, na.rm = TRUE),
+    SD_Prop_CORRECT = sd(value, na.rm = TRUE),
+    N = n(),  
+    SE_Prop_CORRECT = SD_Prop_CORRECT / sqrt(N),  
+    .groups = 'drop' 
+  )
+
+# Print the table 
+summary_stats2 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of PropCorrect by Age, TrialType, and Sublist"
+  )
+
+#Rename labels for plot
+facet_labels <- c(
+  "1" = "Young Adults",
+  "2" = "Older Adults"
+)
+
+# Plot for Mean Proportion Correct
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_CORRECT, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_CORRECT - SE_Prop_CORRECT, ymax = Mean_Prop_CORRECT + SE_Prop_CORRECT),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA, labeller = labeller(Study_1YA_2OA_3NoAudOA = facet_labels)) +
+  labs(
+    title = "Proportion of correct responses as a function of age group, condition,\nand sublist",
+    x = "Sublist",
+    y = "Mean proportion correct", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),  
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")
+  ) +
+  theme_minimal()
+
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_CORRECT, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_CORRECT - SE_Prop_CORRECT, ymax = Mean_Prop_CORRECT + SE_Prop_CORRECT),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA, labeller = labeller(Study_1YA_2OA_3NoAudOA = facet_labels)) +
+  labs(
+    title = "Proportion of correct responses as a function of\nage group, condition, and sublist",
+    x = "Sublist",
+    y = "Mean proportion correct", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),  
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),   
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")  
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study1_YAOA_data,  
+  within = c("Sublist", "TrialType")  ,
+  between = 'Group'
+)
+
+# Print ANOVA table
+print(anova_results)
+
+# Obtain estimated marginal means (EMMs) for the significant factors
+emmeans_results_Group <- emmeans(anova_results, ~ Group)
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+
+# Print the EMMs
+print(emmeans_results_Group)
+print(emmeans_results_Sublist)
+print(emmeans_results_TrialType)
+
+# Perform pairwise comparisons 
+pairs(emmeans_results_Group)
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_TrialType)
+
+# Convert EMMs to data frames for plotting
+emmeans_results_Group_df <- as.data.frame(emmeans_results_Group)
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+
+# Plot the main effect of Group
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main effect of age group",
+    x = "Age group",
+    y = "Estimated marginal mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, fill = Group)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2, position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of age group on the proportion of correctly recalled words",
+    x = "Age group",
+    y = "Estimated marginal mean"
+  ) +
+  scale_fill_discrete(name = "Age group") +  
+  scale_fill_manual(values = c("OA" = "maroon", "YA" = "purple")) +
+  theme_minimal()
+
+# Plot the main effect of Sublist
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2, position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of sublist on the proportion of correctly recalled words",
+    x = "Sublist",
+    y = "Estimated marginal mean"
+  ) +
+  scale_fill_discrete(name = "Sublist") +  
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Trial Type",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2, position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of condition on the proportion of correctly recalled words",
+    x = "Condition",
+    y = "Estimated marginal mean"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials"),
+    name = "Condition"
+  ) +
+  scale_x_discrete(labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")) +
+  theme_minimal()
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+**#####################**<br>
+**####TOTAL NUM FM ####**<br>
+**#####################**
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 1 (YAs + OAs) and Measurement = AvgNumFMTHEMEWordsRecalled
+Study1_YAOA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(1, 2)) %>%
+  filter(Measurement == "AvgNumFMTHEMEWordsRecalled")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study1_YAOA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study1_YAOA_data)
+colnames(Study1_YAOA_data)
+summary(Study1_YAOA_data)
+
+#Summary stats
+summary_stats <- Study1_YAOA_data %>%
+  group_by(Group, TrialType, Sublist) %>%
+  summarise(
+    Mean_NumWords = mean(value, na.rm = TRUE),
+    SD_NumWords = sd(value, na.rm = TRUE)
+  ) %>%
+  mutate(
+    TrialType = recode(TrialType, 
+                       "PhonoTrial" = "Phonological trials",
+                       "SemTrial" = "Semantic trials")
+  ) 
+
+#Print table 
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Total_FM by Age, TrialType, and Sublist"
+  )
+
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the Total Number of False Memories Recalled"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_NumWords, SD_NumWords),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_NumWords = "Mean",
+    SD_NumWords = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_NumWords, SD_NumWords)
+  )
+
+#Plot 
+ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of false memories as a function of age, condition,\nand sublist",
+    x = "Group",
+    y = "Average # of words",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of false memories as\na function of age, condition, and sublist",
+    x = "Group",
+    y = "Average # of words",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")   
+  )
+
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+###################<br>
+#### PROP FM #####<br>
+###################
+</div>
+
+```{R}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 1 (YAs + OAs) and Measurement = PropFM
+Study1_YAOA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(1, 2)) %>%
+  filter(Measurement == "PropFM")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study1_YAOA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study1_YAOA_data)
+colnames(Study1_YAOA_data)
+summary(Study1_YAOA_data)
+
+# Summary stats
+summary_stats1 <- Study1_YAOA_data %>%
+  group_by(Group, TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_FM = mean(value, na.rm = TRUE),
+    SD_Prop_FM = sd(value, na.rm = TRUE)
+  )
+
+# Print table 
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Prop_FM by TrialType and Sublist"
+  )
+
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = md("**Summary Statistics for Proportion FM by Age, Trial Type, and Sublist**")
+  ) %>%
+  fmt_number(
+    columns = c("Mean_Prop_FM", "SD_Prop_FM"),
+    decimals = 2
+  ) %>%
+  cols_label(
+    Mean_Prop_FM = "Mean",
+    SD_Prop_FM = "SD",
+    Sublist = "Sublist",
+    TrialType = "Trial Type"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c("Mean_Prop_FM", "SD_Prop_FM")
+  ) %>%
+  tab_spanner(
+    label = "Summary Statistics",
+    columns = c("Mean_Prop_FM", "SD_Prop_FM")
+  ) %>%
+  fmt_missing(
+    columns = c("Mean_Prop_FM", "SD_Prop_FM"),
+    missing_text = "-"
+  )
+
+# Plot data like poster
+summary_stats2 <- Study1_YAOA_data %>%
+  group_by(Study_1YA_2OA_3NoAudOA, TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_FM = mean(value, na.rm = TRUE),
+    SD_Prop_FM = sd(value, na.rm = TRUE),
+    N = n(),  
+    SE_Prop_FM = SD_Prop_FM / sqrt(N),  
+    .groups = 'drop' 
+  )
+
+# Print the table 
+summary_stats2 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Prop_FM by Age, TrialType, and Sublist"
+  )
+
+summary_stats2 %>%
+  gt() %>%
+  tab_header(
+    title = md("**Summary Statistics for Proportion FM by Age, Trial Type, and Sublist**")
+  ) %>%
+  fmt_number(
+    columns = c("Mean_Prop_FM", "SD_Prop_FM", "SE_Prop_FM"),
+    decimals = 2
+  ) %>%
+  cols_label(
+    Mean_Prop_FM = "Mean",
+    SD_Prop_FM = "SD",
+    SE_Prop_FM = "SE",
+    N = "N",
+    Sublist = "Sublist",
+    TrialType = "Trial Type",
+    Study_1YA_2OA_3NoAudOA = "Age"  
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c("Mean_Prop_FM", "SD_Prop_FM", "SE_Prop_FM", "N")
+  ) %>%
+  tab_spanner(
+    label = "Summary Statistics",
+    columns = c("Mean_Prop_FM", "SD_Prop_FM", "SE_Prop_FM")
+  ) %>%
+  fmt_missing(
+    columns = c("Mean_Prop_FM", "SD_Prop_FM", "SE_Prop_FM", "N"),
+    missing_text = "-"
+  )
+
+# Define new labels 
+facet_labels <- c(
+  "1" = "Young adults",
+  "2" = "Older adults"
+)
+
+#Plot 
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_FM, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_FM - SE_Prop_FM, ymax = Mean_Prop_FM + SE_Prop_FM),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA, labeller = labeller(Study_1YA_2OA_3NoAudOA = facet_labels)) +
+  labs(
+    title = "Mean proportion of false memories by sublist, condition, and age group",
+    x = "Sublist",
+    y = "Mean proportion FM",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),  
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")
+  ) +
+  theme_minimal()
+
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_FM, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_FM - SE_Prop_FM, ymax = Mean_Prop_FM + SE_Prop_FM),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA, labeller = labeller(Study_1YA_2OA_3NoAudOA = facet_labels)) +
+  labs(
+    title = "Mean proportion of false memories by sublist,\ncondition, and age group",
+    x = "Sublist",
+    y = "Mean proportion FM",
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),  
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study1_YAOA_data,  
+  within = c("Sublist", "TrialType"),
+  between = 'Group'
+)
+
+# Print ANOVA table
+print(anova_results)
+
+# Obtain estimated marginal means (EMMs) for the significant effects
+emmeans_results_Group <- emmeans(anova_results, ~ Group)
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+
+# Print the EMMs
+print(emmeans_results_Group)
+print(emmeans_results_TrialType)
+print(emmeans_results_Sublist)
+
+# Perform pairwise comparisons 
+pairs(emmeans_results_Group)
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_TrialType)
+
+# Convert EMMs to data frames for plotting
+emmeans_results_Group_df <- as.data.frame(emmeans_results_Group)
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+
+# Plot the main effect of Group
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Age",
+    x = "Group",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Group_df, aes(x = Group, y = emmean, fill = Group)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of age group on the proportion of false memories",
+    x = "Age group",
+    y = "Estimated marginal mean", 
+    fill = "Age group"
+  ) +
+  scale_fill_manual(values = c("OA" = "maroon", "YA" = "purple")) +  
+  theme_minimal()
+
+# Plot the main effect of Sublist
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of sublist on the proportion of false memories",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of condition on the proportion of false memories",
+    x = "TrialType",
+    y = "Estimated Marginal Mean", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue")) +
+  theme_minimal()
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+#####################<br>
+#####################<br>
+###### STUDY 2 ######<br>
+#####################<br>
+#####################<br><br>
+
+#####################<br>
+#TOTAL NUM RECALLED #<br>
+#####################
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 2 (OAs) and Measurement = AvgNumWordsRecalled
+Study2_OA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(3)) %>%
+  filter(Measurement == "AvgNumWordsRecalled")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study2_OA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study2_OA_data)
+colnames(Study2_OA_data)
+summary(Study2_OA_data)
+
+#Summary stats
+summary_stats <- Study2_OA_data %>%
+  group_by(TrialType, Sublist) %>%
+  summarise(
+    Mean_NumWords = mean(value, na.rm = TRUE),
+    SD_NumWords = sd(value, na.rm = TRUE)
+  ) %>%
+  mutate(
+    TrialType = recode(TrialType, 
+                       "PhonoTrial" = "Phonological trials",
+                       "SemTrial" = "Semantic trials")
+  ) 
+
+#Print table 
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of NumWords by condition and sublist"
+  )
+
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the total number of words recalled as a function of condition and sublist"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_NumWords, SD_NumWords),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_NumWords = "Mean",
+    SD_NumWords = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_spanner_delim(delim = " ")
+
+#Plot 
+ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill =  TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of recalled words as a function of condition and sublist",
+    x = "Condition",
+    y = "Average # of words", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of recalled words as a function\nof condition and sublist",
+    x = "Condition",
+    y = "Average # of words", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("Phonological trials" = "darkblue", "Semantic trials" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),   
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")   
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA model
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study2_OA_data,  
+  within = c("TrialType", "Sublist") 
+)
+
+# Print ANOVA results
+summary(anova_results)
+print(anova_results)
+
+# Obtain estimated marginal means
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_interaction <- emmeans(anova_results, ~ TrialType | Sublist)
+
+#print EMMs
+print(emmeans_results_TrialType)
+print(emmeans_results_Sublist)
+print(emmeans_results_interaction)
+
+# Perform pairwise comparisons
+pairs(emmeans_results_TrialType)
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_interaction)
+
+
+# Convert EMMs to data frames for plotting
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_interaction_df <- as.data.frame(emmeans_results_interaction)
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue")) +
+  theme_minimal()
+
+# Plot the main effect of interaction
+ggplot(emmeans_results_interaction_df, aes(x = Sublist, y = emmean, color = TrialType, shape = TrialType)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2) +
+  labs(
+    title = "Interaction effect of condition and sublist on the total number of words recalled",
+    x = "Sublist",
+    y = "Estimated marginal mean"
+  ) +
+  theme_minimal() 
+
+ggplot(emmeans_results_interaction_df, aes(x = Sublist, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Interaction effect of condition and sublist on the total number of words recalled",
+    x = "Sublist",
+    y = "Estimated marginal mean",
+    fill = "Condition"  
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  theme_minimal()
+```
+
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+###################<br>
+#TOTAL # CORRECT #<br>
+##################
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 2 (OAs) and Measurement = AvgNumCORRECTWordsRecalled
+Study2_OA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(3)) %>%
+  filter(Measurement == "AvgNumCORRECTWordsRecalled")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study2_OA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study2_OA_data)
+colnames(Study2_OA_data)
+summary(Study2_OA_data)
+
+#Summary stats
+summary_stats <- Study2_OA_data %>%
+  group_by(TrialType, Sublist) %>%
+  summarise(
+    Mean_NumWords = mean(value, na.rm = TRUE),
+    SD_NumWords = sd(value, na.rm = TRUE)
+  )
+
+#Print table 
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Total_Correct by TrialType and Sublist"
+  )
+
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the total number of words recalled as a function of Trial Type and Sublist"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_NumWords, SD_NumWords),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_NumWords = "Mean",
+    SD_NumWords = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_NumWords, SD_NumWords)
+  )
+
+#Plot 
+ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill =  TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of correctly recalled words\nas a function of condition and sublist",
+    x = "Condition",
+    y = "Average # of words", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of correctly recalled words\nas a function of condition and sublist",
+    x = "Condition",
+    y = "Average # of words", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")   
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA model
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study2_OA_data,  
+  within = c("TrialType", "Sublist") 
+)
+
+# Print ANOVA results
+summary(anova_results)
+print(anova_results)
+
+# Obtain estimated marginal means
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_interaction <- emmeans(anova_results, ~ TrialType | Sublist)
+
+#print EMMs
+print(emmeans_results_TrialType)
+print(emmeans_results_Sublist)
+print(emmeans_results_interaction)
+
+# Perform pairwise comparisons
+pairs(emmeans_results_TrialType)
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_interaction)
+
+# Convert EMMs to data frames for plotting
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_interaction_df <- as.data.frame(emmeans_results_interaction)
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of TrialType",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue")) +
+  theme_minimal()
+
+# Plot the main effect of List Position
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Trial Type",
+    y = "Estimated Marginal Mean"
+  ) +
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+# Plot the main effect of interaction
+ggplot(emmeans_results_interaction_df, aes(x = Sublist, y = emmean, color = TrialType, shape = TrialType)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2) +
+  labs(
+    title = "Interaction effect of condition and sublist",
+    x = "Sublist",
+    y = "Estimated marginal mean"
+  ) +
+  theme_minimal() 
+
+ggplot(emmeans_results_interaction_df, aes(x = Sublist, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Interaction effect of condition and sublist on the average number of correct words recalled",
+    x = "Sublist",
+    y = "Estimated marginal mean",
+    fill = "Condition"  
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  theme_minimal()
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+###################<br>
+## PROP CORRECT ##<br>
+##################
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 2 (OAs) and Measurement = PropCORRECT
+Study2_OA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(3)) %>%
+  filter(Measurement == "PropCORRECT")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study2_OA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study2_OA_data)
+colnames(Study2_OA_data)
+summary(Study2_OA_data)
+
+#Summary stats
+summary_stats1 <- Study2_OA_data %>%
+  group_by(TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_CORRECT = mean(value, na.rm = TRUE),
+    SD_Prop_CORRECT = sd(value, na.rm = TRUE)
+  )
+
+#Print table 
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of PropCorrect by TrialType and Sublist"
+  )
+
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the proportion of correct words recalled as a function of trial type and Sublist"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_Prop_CORRECT, SD_Prop_CORRECT),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_Prop_CORRECT, SD_Prop_CORRECT)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_Prop_CORRECT = "Mean",
+    SD_Prop_CORRECT = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_Prop_CORRECT, SD_Prop_CORRECT)
+  ) %>%
+  tab_spanner_delim(delim = " ")
+```
+
+```{r}
+#Plot data like poster
+summary_stats2 <- Study2_OA_data %>%
+  group_by(Study_1YA_2OA_3NoAudOA, TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_CORRECT = mean(value, na.rm = TRUE),
+    SD_Prop_CORRECT = sd(value, na.rm = TRUE),
+    N = n(),  
+    SE_Prop_CORRECT = SD_Prop_CORRECT / sqrt(N),  
+    .groups = 'drop' 
+  )
+
+# Print the table 
+summary_stats2 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of PropCorrect by Age, TrialType, and Sublist"
+  )
+
+# Plot for Mean Proportion Correct
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_CORRECT, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_CORRECT - SE_Prop_CORRECT, ymax = Mean_Prop_CORRECT + SE_Prop_CORRECT),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA) +
+  labs(
+    title = "Mean proportion correct by condition and sublist",
+    x = "Sublist",
+    y = "Mean proportion correct", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() 
+
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_CORRECT, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_CORRECT - SE_Prop_CORRECT, ymax = Mean_Prop_CORRECT + SE_Prop_CORRECT),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA) +
+  labs(
+    title = "Proportion of correct responses as a function of\ncondition and sublist",
+    x = "Sublist",
+    y = "Mean proportion correct", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),   
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14), 
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),   
+    plot.margin = margin(1, 1, 1, 1, "cm")
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study2_OA_data,  
+  within = c("Sublist", "TrialType")  
+)
+
+# Print ANOVA table
+print(anova_results)
+
+# Obtain estimated marginal means (EMMs) for the significant factors
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+
+# Print the EMMs
+print(emmeans_results_Sublist)
+print(emmeans_results_TrialType)
+
+# Perform pairwise comparisons 
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_TrialType)
+
+# Convert EMMs to data frames for plotting
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+
+# Plot the main effect of Sublist
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main effect of sublist",
+    x = "Sublist",
+    y = "Estimated marginal mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of sublist on the proportion of correctly recalled words",
+    x = "Sublist",
+    y = "Estimated marginal mean", 
+    fill = "Sublist"
+  ) +
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+# Plot the main effect of TrialType
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of condition on the proportion of correctly recalled words",
+    x = "Condition",
+    y = "Estimated marginal mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of condition on the proportion of correctly recalled words",
+    x = "Condition",
+    y = "Estimated marginal mean", 
+    fill = "Condition"
+  ) +
+  scale_x_discrete(
+    labels = c("Phono" = "Phonological trials", "Semantic" = "Semantic trials")  
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  theme_minimal()
+
+
+```
+
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+###################<br>
+## TOTAL NUM FM ##<br>
+##################
+</div>
+
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 2 (OAs) and Measurement = AvgNumFMTHEMEWordsRecalled
+Study2_OA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(3)) %>%
+  filter(Measurement == "AvgNumFMTHEMEWordsRecalled")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study2_OA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study2_OA_data)
+colnames(Study2_OA_data)
+summary(Study2_OA_data)
+
+#Summary stats
+summary_stats <- Study2_OA_data %>%
+  group_by(TrialType, Sublist) %>%
+  summarise(
+    Mean_NumWords = mean(value, na.rm = TRUE),
+    SD_NumWords = sd(value, na.rm = TRUE)
+  )
+
+#Print table 
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Total_FM by TrialType and Sublist"
+  )
+
+summary_stats %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the total FMs recalled as a function of Trial Type and Sublist"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_NumWords, SD_NumWords),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_NumWords, SD_NumWords)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_NumWords = "Mean",
+    SD_NumWords = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_NumWords, SD_NumWords)
+  )
+
+#Plot 
+ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill =  TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of FMs\nas a function of condition and sublist",
+    x = "Condition",
+    y = "Average # of words", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill = TrialType)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(
+    aes(ymin = Mean_NumWords - SD_NumWords, ymax = Mean_NumWords + SD_NumWords),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Sublist) +
+  labs(
+    title = "Average number of FMs\nas a function of condition and sublist",
+    x = "Condition",
+    y = "Average # of words", 
+    fill = "Condition"
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("Phonological trials", "Semantic trials")
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")
+  )
+
+```
+
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+###################<br>
+#### PROP FM #####<br>
+##################
+</div>
+```{r}
+#Filter data by column "Study_1YA_2OA_3NoAudOA" to include Study 2 (OAs) and Measurement = PropFM
+Study2_OA_data <- data_analysis_long %>%
+  filter(Study_1YA_2OA_3NoAudOA %in% c(3)) %>%
+  filter(Measurement == "PropFM")
+
+#Number of participants after filtering 
+unique_count <- length(unique(Study2_OA_data$`Subject`))
+cat("Number of participants in Study 1 after filtering is:", unique_count, "\n")
+
+#Explore data frame
+head(Study2_OA_data)
+colnames(Study2_OA_data)
+summary(Study2_OA_data)
+
+# Summary stats 
+summary_stats1 <- Study2_OA_data %>%
+  group_by(TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_FM = mean(value, na.rm = TRUE),
+    SD_Prop_FM = sd(value, na.rm = TRUE)
+  )
+
+# Print table
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Prop_FM by TrialType and Sublist"
+  )
+
+summary_stats1 %>%
+  gt() %>%
+  tab_header(
+    title = "Mean (SD) of the total number of proportion FM recalled as a function of Trial Type and Sublist"
+  ) %>%
+  fmt_number(
+    columns = c(Mean_Prop_FM, SD_Prop_FM),
+    decimals = 2
+  ) %>%
+  tab_spanner(
+    label = "Descriptive Statistics",
+    columns = c(Mean_Prop_FM, SD_Prop_FM)
+  ) %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table.border.top.width = px(2),
+    table.border.top.style = "solid",
+    table.border.bottom.style = "solid",
+    column_labels.border.bottom.color = "black",
+    column_labels.border.bottom.width = px(2),
+    column_labels.border.bottom.style = "solid"
+  ) %>%
+  cols_label(
+    Mean_Prop_FM = "Mean",
+    SD_Prop_FM = "SD"
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = c(Mean_Prop_FM, SD_Prop_FM)
+  ) %>%
+  tab_spanner_delim(delim = " ")
+```
+```{r}
+# Plot data like poster
+summary_stats2 <- Study2_OA_data %>%
+  group_by(Study_1YA_2OA_3NoAudOA, TrialType, Sublist) %>%
+  summarise(
+    Mean_Prop_FM = mean(value, na.rm = TRUE),
+    SD_Prop_FM = sd(value, na.rm = TRUE),
+    N = n(),  
+    SE_Prop_FM = SD_Prop_FM / sqrt(N),  
+    .groups = 'drop' 
+  )
+
+# Print the table
+summary_stats2 %>%
+  gt() %>%
+  tab_header(
+    title = "Summary Statistics of Prop_FM by TrialType, and Sublist"
+  )
+
+# Plot for Mean Proportion FM
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_FM, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_FM - SE_Prop_FM, ymax = Mean_Prop_FM + SE_Prop_FM),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA) +
+  labs(
+    title = "Mean proportion of false memories by condition and sublist",
+    x = "Sublist",
+    y = "Mean proportion of false memories",
+    fill = "Condition"  
+  ) +
+  scale_x_discrete(
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),  
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  theme_minimal()
+
+ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_FM, fill = TrialType)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Mean_Prop_FM - SE_Prop_FM, ymax = Mean_Prop_FM + SE_Prop_FM),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA) +
+  labs(
+    title = "Mean proportion of false memories by\ncondition and sublist",
+    x = "Sublist",
+    y = "Mean proportion FM",
+    fill = "Condition"  
+  ) +
+  scale_x_discrete(
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),  
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),   
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"), 
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm")
+  )
+
+```
+
+```{r}
+# Repeated measures ANOVA
+anova_results <- aov_ez(
+  id = "Subject",  
+  dv = "value",  
+  data = Study2_OA_data,  
+  within = c("Sublist", "TrialType")  
+)
+
+# Print ANOVA table
+summary(anova_results)
+print(anova_results)
+
+# Obtain estimated marginal means (EMMs) for the significant factors
+emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
+emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
+
+# Print the EMMs
+print(emmeans_results_Sublist)
+print(emmeans_results_TrialType)
+
+# Perform pairwise comparisons
+pairs(emmeans_results_Sublist)
+pairs(emmeans_results_TrialType)
+# Convert EMMs to data frames for plotting
+emmeans_results_Sublist_df <- as.data.frame(emmeans_results_Sublist)
+emmeans_results_TrialType_df <- as.data.frame(emmeans_results_TrialType)
+
+# Plot the main effect of Sublist
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, ymin = lower.CL, ymax = upper.CL)) +
+  geom_point(size = 3) +
+  geom_errorbar(width = 0.2) +
+  labs(
+    title = "Main Effect of Sublist",
+    x = "Sublist",
+    y = "Estimated Marginal Mean"
+  ) +
+  theme_minimal()
+
+ggplot(emmeans_results_Sublist_df, aes(x = Sublist, y = emmean, fill = Sublist)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main effect of sublist on the proportion of false memories",
+    x = "Sublist",
+    y = "Estimated marginal mean"
+  ) +
+  scale_fill_manual(values = c("SublistA" = "lightcoral", "SublistB" = "lightblue", "SublistC" = "orange")) +
+  theme_minimal()
+
+#Plot trialtype
+ggplot(emmeans_results_TrialType_df, aes(x = TrialType, y = emmean, fill = TrialType)) +
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
+                width = 0.2, 
+                position = position_dodge(0.9)) +
+  labs(
+    title = "Main Effect of condition on the proportion of false memories",
+    x = "Condition",
+    y = "Estimated marginal mean", 
+    fill = "Condition"
+  ) +
+  scale_x_discrete(
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  scale_fill_manual(
+    values = c("PhonoTrial" = "darkblue", "SemTrial" = "lightblue"),
+    labels = c("PhonoTrial" = "Phonological trials", "SemTrial" = "Semantic trials")  
+  ) +
+  theme_minimal()
+```
