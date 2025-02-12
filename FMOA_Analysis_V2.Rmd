@@ -1,7 +1,7 @@
 ---
 title: "FMOA_markdown"
 author: "Lauri Gurguryan"
-date: "2025-02-07"
+date: "2025-02-12"
 output: 
   html_document:
     theme: journal
@@ -22,6 +22,7 @@ library(gt)
 library(afex)
 library(emmeans)
 library(ggplot2)
+library(effectsize)
 ```
 <div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
 **#########################**<br>
@@ -298,6 +299,15 @@ anova_results <- aov_ez(
 summary(anova_results)
 print(anova_results)
 
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame 
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
+
 # Obtain estimated marginal means
 emmeans_results_Group <- emmeans(anova_results, ~ Group)
 emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
@@ -562,6 +572,16 @@ anova_results <- aov_ez(
 # Print ANOVA table
 summary(anova_results)
 print(anova_results)
+
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
+
 
 # Obtain estimated marginal means (EMMs) for the significant factors
 emmeans_results_Group <- emmeans(anova_results, ~ Group)
@@ -845,6 +865,15 @@ anova_results <- aov_ez(
 
 # Print ANOVA table
 print(anova_results)
+
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
 
 # Obtain estimated marginal means (EMMs) for the significant factors
 emmeans_results_Group <- emmeans(anova_results, ~ Group)
@@ -1253,6 +1282,15 @@ anova_results <- aov_ez(
 # Print ANOVA table
 print(anova_results)
 
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
+
 # Obtain estimated marginal means (EMMs) for the significant effects
 emmeans_results_Group <- emmeans(anova_results, ~ Group)
 emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
@@ -1496,6 +1534,15 @@ anova_results <- aov_ez(
 summary(anova_results)
 print(anova_results)
 
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
+
 # Obtain estimated marginal means
 emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
 emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
@@ -1706,6 +1753,15 @@ anova_results <- aov_ez(
 # Print ANOVA results
 summary(anova_results)
 print(anova_results)
+
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
 
 # Obtain estimated marginal means
 emmeans_results_TrialType <- emmeans(anova_results, ~ TrialType)
@@ -1921,7 +1977,7 @@ ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_CORRECT, fill = TrialType)
     position = position_dodge(width = 0.9),
     width = 0.25
   ) +
-  facet_wrap(~ Study_1YA_2OA_3NoAudOA) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA, labeller = labeller(Study_1YA_2OA_3NoAudOA = c('3' = 'Older Adults'))) +
   labs(
     title = "Proportion of correct responses as a function of\ncondition and sublist",
     x = "Sublist",
@@ -1958,6 +2014,15 @@ anova_results <- aov_ez(
 
 # Print ANOVA table
 print(anova_results)
+
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
 
 # Obtain estimated marginal means (EMMs) for the significant factors
 emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
@@ -2277,7 +2342,7 @@ ggplot(summary_stats2, aes(x = Sublist, y = Mean_Prop_FM, fill = TrialType)) +
     position = position_dodge(width = 0.9),
     width = 0.25
   ) +
-  facet_wrap(~ Study_1YA_2OA_3NoAudOA) +
+  facet_wrap(~ Study_1YA_2OA_3NoAudOA, labeller = labeller(Study_1YA_2OA_3NoAudOA = c('3' = 'Older Adults'))) +
   labs(
     title = "Mean proportion of false memories by\ncondition and sublist",
     x = "Sublist",
@@ -2318,6 +2383,15 @@ anova_results <- aov_ez(
 # Print ANOVA table
 summary(anova_results)
 print(anova_results)
+
+#Calculate effect size
+eta_sq_results <-eta_squared(anova_results, partial = TRUE)
+
+# Convert eta squared results to a data frame  
+eta_sq_table <- as.data.frame(eta_sq_results)
+
+# Print the eta squared table
+print(eta_sq_table)
 
 # Obtain estimated marginal means (EMMs) for the significant factors
 emmeans_results_Sublist <- emmeans(anova_results, ~ Sublist)
