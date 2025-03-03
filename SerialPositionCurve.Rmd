@@ -1,0 +1,260 @@
+---
+title: "Serial position curves"
+author: "Lauri Gurguryan"
+date: "02/27/2025"
+output: html_document
+---
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+**#########################**<br>
+**##### EXPERIMENT 1 ######**<br>
+**#########################**
+</div>
+
+```{r}
+# Import libs
+library(tidyverse)
+library(readxl)
+
+# Columns to keep
+columns_to_keep <- c(
+  "Trial", "Procedure[Trial]", 
+  "PresentedItem1", "PresentedItem2", "PresentedItem3", "PresentedItem4", 
+  "PresentedItem5", "PresentedItem6", "PresentedItem7", "PresentedItem8", 
+  "PresentedItem9", "PresentedItem10", "PresentedItem11", "PresentedItem12", 
+  "Recalled1", "Recalled2", "Recalled3", "Recalled4", "Recalled5", 
+  "Recalled6", "Recalled7", "Recalled8", "Recalled9", "Recalled10", 
+  "Recalled11", "Recalled12", "Recalled13", "Recalled14", "Recalled15", 
+  "Recalled16", "Recalled17", "Recalled18", "Recalled19", "Recalled20"
+)
+
+# Load files
+ya_files <- list.files(path = "/Users/laurigurguryan/Desktop/FMOA/data/E1_YAs", 
+                       pattern = "^Sub_.*\\.xlsx$", 
+                       full.names = TRUE)
+
+oa_files <- list.files(path = "/Users/laurigurguryan/Desktop/FMOA/data/E1_OAs", 
+                       pattern = "^Sub_.*\\.xlsx$", 
+                       full.names = TRUE)
+
+# Combine the file lists
+subject_files <- c(ya_files, oa_files)
+
+subject_data <- list()
+
+# Label subjects as YA or OA
+for (i in 1:length(subject_files)) {
+  subject_id <- basename(subject_files[i]) %>% 
+    str_remove("\\.xlsx$")
+  
+  # Determine group (YA or OA) based on the folder
+  group <- ifelse(subject_files[i] %in% ya_files, "YA", "OA")
+  
+  subject_data[[i]] <- read_excel(subject_files[i]) %>%
+    select(all_of(columns_to_keep)) %>%
+    mutate(subject_id = subject_id, group = group) %>%
+    mutate(Trial = as.character(Trial))
+}
+
+# Combine all subjects into 1 df 
+all_data <- bind_rows(subject_data)
+
+# Number of presented items (12 )
+num_items <- 12
+
+# Total number of trials (should be 46 * number of subjects)
+total_trials <- nrow(all_data)
+print(total_trials)
+
+# Create df to store proportion info (ID, position, correct recall, and condition)
+recall_data <- data.frame(
+  position = rep(1:num_items, times = total_trials),  
+  correct_recall_1y_0n = integer(total_trials * num_items), 
+  condition = character(total_trials * num_items),
+  subject_id = character(total_trials * num_items),
+  group = character(total_trials * num_items)  
+)
+
+# Loop through each subject and fill df
+for (i in 1:nrow(all_data)) {
+  presented_words <- all_data[i, 3:14]  
+  recalled_words <- all_data[i, 15:34]  
+  condition <- all_data$`Procedure[Trial]`[i]  
+  
+  # Keep the subject_id and group from the data
+  subject_id <- all_data$subject_id[i]  
+  group <- all_data$group[i]
+  
+  # Compare recalled words to presented words for each position
+  for (j in 1:num_items) {
+    if (!is.na(recalled_words[[j]]) && recalled_words[[j]] == presented_words[[j]]) {
+      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 1  
+    } else {
+      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  
+    }
+    recall_data$condition[(i - 1) * num_items + j] <- condition  
+    recall_data$subject_id[(i - 1) * num_items + j] <- subject_id  
+    recall_data$group[(i - 1) * num_items + j] <- group  
+  }
+}
+
+# Summarize per subject 
+prop_subject <- recall_data %>%
+  group_by(position, condition, subject_id, group) %>%  
+  summarise(mean_correct_recall_1y_0n = mean(correct_recall_1y_0n, na.rm = TRUE), .groups = 'drop')
+
+print (prop_subject)
+
+# Summarize across subjects 
+prop_ALL <- prop_subject %>%
+  group_by(position, condition, group) %>%  
+  summarise(mean_correct_recall_1y_0n = mean(mean_correct_recall_1y_0n, na.rm = TRUE), .groups = 'drop')
+
+print(prop_ALL)
+
+# Plot for Semantic 
+semantic_plot <- ggplot(filter(prop_ALL, condition == "Semantic"), aes(x = position, y = mean_correct_recall_1y_0n, color = group, shape = group)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Serial position curve: Semantic", 
+       x = "Presentation position", y = "Proportion of correctly recalled words") +
+  scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
+  scale_y_continuous(limits = c(0, 1)) +
+  theme_minimal() 
+
+# Plot for Phonological 
+phono_plot <- ggplot(filter(prop_ALL, condition == "Phono"), aes(x = position, y = mean_correct_recall_1y_0n, color = group, shape = group)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Serial position curve: Phonological", 
+       x = "Presentation position", y = "Proportion of correctly recalled words") +
+  scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
+  scale_y_continuous(limits = c(0, 1)) +  
+  theme_minimal() 
+
+# Print the plots
+print(semantic_plot)
+print(phono_plot)
+
+```
+<div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
+**#########################**<br>
+**##### EXPERIMENT 2 ######**<br>
+**#########################**
+</div>
+```{r}
+# Import libs
+library(tidyverse)
+library(readxl)
+
+# Load data files
+subject_files <- list.files(path = "/Users/laurigurguryan/Desktop/FMOA/data/E2_OAs", 
+                            pattern = "^Sub_.*\\.xlsx$", 
+                            full.names = TRUE)
+subject_data <- list()
+
+# Clean data...columns to keep
+columns_to_keep <- c(
+  "Trial", "Procedure[Trial]", 
+  "PresentedItem1", "PresentedItem2", "PresentedItem3", "PresentedItem4", 
+  "PresentedItem5", "PresentedItem6", "PresentedItem7", "PresentedItem8", 
+  "PresentedItem9", "PresentedItem10", "PresentedItem11", "PresentedItem12", 
+  "Recalled1", "Recalled2", "Recalled3", "Recalled4", "Recalled5", 
+  "Recalled6", "Recalled7", "Recalled8", "Recalled9", "Recalled10", 
+  "Recalled11", "Recalled12", "Recalled13", "Recalled14", "Recalled15", 
+  "Recalled16", "Recalled17", "Recalled18", "Recalled19", "Recalled20"
+)
+
+# Loop over subjects to clean 
+for (i in 1:length(subject_files)) {
+  subject_id <- basename(subject_files[i]) %>% 
+    str_remove("\\.xlsx$")
+  
+  subject_data[[i]] <- read_excel(subject_files[i]) %>%
+    select(all_of(columns_to_keep)) %>%
+    mutate(subject_id = subject_id) %>%
+    mutate(Trial = as.character(Trial))  
+}
+
+# Combine all subjects into 1 df 
+all_data <- bind_rows(subject_data)
+
+# Add "group" column to all_data (all subjects are in the "OA" group)
+all_data <- all_data %>%
+  mutate(group = "OA")
+
+# Number of presented items (12 in your case)
+num_items <- 12
+
+# Total number of trials (should be 46 * number of subjects)
+total_trials <- nrow(all_data)
+print(total_trials)
+
+# Create df to store proportion info (ID, position, correct recall, and condition)
+recall_data <- data.frame(
+  position = rep(1:num_items, times = total_trials),  
+  correct_recall_1y_0n = integer(total_trials * num_items), 
+  condition = character(total_trials * num_items),
+  subject_id = character(total_trials * num_items)  
+)
+
+# Loop through each subject and fill df
+for (i in 1:nrow(all_data)) {
+  presented_words <- all_data[i, 3:14]  
+  recalled_words <- all_data[i, 15:34]  
+  condition <- all_data$`Procedure[Trial]`[i]  
+  
+  # Keep the subject_id from the data
+  subject_id <- all_data$subject_id[i]  
+  
+  # Compare recalled words to presented words for each position
+  for (j in 1:num_items) {
+    if (!is.na(recalled_words[[j]]) && recalled_words[[j]] == presented_words[[j]]) {
+      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 1  
+    } else {
+      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  
+    }
+    recall_data$condition[(i - 1) * num_items + j] <- condition  
+    recall_data$subject_id[(i - 1) * num_items + j] <- subject_id  
+  }
+}
+
+# Summarize per subject 
+prop_subject <- recall_data %>%
+  group_by(position, condition, subject_id) %>%  
+  summarise(mean_correct_recall_1y_0n = mean(correct_recall_1y_0n, na.rm = TRUE), .groups = 'drop')
+
+print(prop_subject)
+
+# Summarize across subjects 
+prop_ALL <- prop_subject %>%
+  group_by(position, condition) %>%  
+  summarise(mean_correct_recall_1y_0n = mean(mean_correct_recall_1y_0n, na.rm = TRUE), .groups = 'drop')
+
+print(prop_ALL)
+
+# Plot for Semantic 
+semantic_plot <- ggplot(filter(prop_ALL, condition == "Semantic"), 
+                        aes(x = position, y = mean_correct_recall_1y_0n, color = group)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Serial position curve: Semantic", 
+       x = "Presentation position", y = "Proportion of correctly recalled words") +
+  scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
+  scale_y_continuous(limits = c(0, 1)) +
+  theme_minimal() 
+
+# Plot for Phonological 
+phono_plot <- ggplot(filter(prop_ALL, condition == "Phono"), 
+                     aes(x = position, y = mean_correct_recall_1y_0n, color = group)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Serial position curve: Phonological", 
+       x = "Presentation position", y = "Proportion of Correctly Recalled Words") +
+  scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
+  scale_y_continuous(limits = c(0, 1)) +  
+  theme_minimal()
+
+# Print plots
+print(semantic_plot)
+print(phono_plot)
+```
