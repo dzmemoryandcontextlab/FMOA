@@ -1,7 +1,7 @@
 ---
 title: "Serial position curves"
 author: "Lauri Gurguryan"
-date: "02/27/2025"
+date: "03/05/2025"
 output: html_document
 ---
 <div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
@@ -14,6 +14,7 @@ output: html_document
 # Import libs
 library(tidyverse)
 library(readxl)
+library(writexl)
 
 # Columns to keep
 columns_to_keep <- c(
@@ -56,13 +57,13 @@ for (i in 1:length(subject_files)) {
 }
 
 # Combine all subjects into 1 df 
-all_data <- bind_rows(subject_data)
+all_data_E1 <- bind_rows(subject_data)
 
 # Number of presented items (12 )
 num_items <- 12
 
 # Total number of trials (should be 46 * number of subjects)
-total_trials <- nrow(all_data)
+total_trials <- nrow(all_data_E1)
 print(total_trials)
 
 # Create df to store proportion info (ID, position, correct recall, and condition)
@@ -75,22 +76,29 @@ recall_data <- data.frame(
 )
 
 # Loop through each subject and fill df
-for (i in 1:nrow(all_data)) {
-  presented_words <- all_data[i, 3:14]  
-  recalled_words <- all_data[i, 15:34]  
-  condition <- all_data$`Procedure[Trial]`[i]  
+for (i in 1:nrow(all_data_E1)) {
+  presented_words <- all_data_E1[i, 3:14]  # Presented words in columns 3 to 14
+  recalled_words <- all_data_E1[i, 15:34]  # Recalled words in columns 15 to 34
+  condition <- all_data_E1$`Procedure[Trial]`[i]  
   
   # Keep the subject_id and group from the data
-  subject_id <- all_data$subject_id[i]  
-  group <- all_data$group[i]
+  subject_id <- all_data_E1$subject_id[i]  
+  group <- all_data_E1$group[i]
   
-  # Compare recalled words to presented words for each position
+  # Compare each presented word to the list of recalled words
   for (j in 1:num_items) {
-    if (!is.na(recalled_words[[j]]) && recalled_words[[j]] == presented_words[[j]]) {
-      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 1  
+    # Ensure presented word is not NA before performing comparison
+    if (!is.na(presented_words[[j]])) {
+      if (any(presented_words[[j]] == recalled_words, na.rm = TRUE)) {
+        recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 1  # Correct recall
+      } else {
+        recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  # Incorrect recall
+      }
     } else {
-      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  
+      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  # If the presented word is NA, mark as incorrect
     }
+    
+    # Store other information
     recall_data$condition[(i - 1) * num_items + j] <- condition  
     recall_data$subject_id[(i - 1) * num_items + j] <- subject_id  
     recall_data$group[(i - 1) * num_items + j] <- group  
@@ -111,30 +119,57 @@ prop_ALL <- prop_subject %>%
 
 print(prop_ALL)
 
+# Custom colors for group
+group_colors <- c("YA" = "limegreen", "OA" = "purple")
+
 # Plot for Semantic 
 semantic_plot <- ggplot(filter(prop_ALL, condition == "Semantic"), aes(x = position, y = mean_correct_recall_1y_0n, color = group, shape = group)) +
   geom_line() +
   geom_point() +
-  labs(title = "Serial position curve: Semantic", 
+  labs(title = "Serial position curve: Semantic condition", 
        x = "Presentation position", y = "Proportion of correctly recalled words") +
   scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
   scale_y_continuous(limits = c(0, 1)) +
-  theme_minimal() 
+  scale_color_manual(values = group_colors) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm"))
 
 # Plot for Phonological 
 phono_plot <- ggplot(filter(prop_ALL, condition == "Phono"), aes(x = position, y = mean_correct_recall_1y_0n, color = group, shape = group)) +
   geom_line() +
   geom_point() +
-  labs(title = "Serial position curve: Phonological", 
+  labs(title = "Serial position curve: Phonological condition", 
        x = "Presentation position", y = "Proportion of correctly recalled words") +
   scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
   scale_y_continuous(limits = c(0, 1)) +  
-  theme_minimal() 
+  scale_color_manual(values = group_colors) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm"))
 
 # Print the plots
 print(semantic_plot)
 print(phono_plot)
 
+#Save the all_data_E1
+write_xlsx(all_data_E1, "/Users/laurigurguryan/Desktop/FMOA/data/AllData_presented-recalled_E1.xlsx")
 ```
 <div style="text-align: center; font-size: 18px; font-weight: bold; color: #D6336C;">
 **#########################**<br>
@@ -176,17 +211,17 @@ for (i in 1:length(subject_files)) {
 }
 
 # Combine all subjects into 1 df 
-all_data <- bind_rows(subject_data)
+all_data_E2 <- bind_rows(subject_data)
 
-# Add "group" column to all_data (all subjects are in the "OA" group)
-all_data <- all_data %>%
+# Add "group" column to all_data_E2 (all subjects are in the "OA" group)
+all_data_E2 <- all_data_E2 %>%
   mutate(group = "OA")
 
 # Number of presented items (12 in your case)
 num_items <- 12
 
 # Total number of trials (should be 46 * number of subjects)
-total_trials <- nrow(all_data)
+total_trials <- nrow(all_data_E2)
 print(total_trials)
 
 # Create df to store proportion info (ID, position, correct recall, and condition)
@@ -198,23 +233,32 @@ recall_data <- data.frame(
 )
 
 # Loop through each subject and fill df
-for (i in 1:nrow(all_data)) {
-  presented_words <- all_data[i, 3:14]  
-  recalled_words <- all_data[i, 15:34]  
-  condition <- all_data$`Procedure[Trial]`[i]  
+for (i in 1:nrow(all_data_E2)) {
+  presented_words <- all_data_E2[i, 3:14]  # Presented words in columns 3 to 14
+  recalled_words <- all_data_E2[i, 15:34]  # Recalled words in columns 15 to 34
+  condition <- all_data_E2$`Procedure[Trial]`[i]  
   
-  # Keep the subject_id from the data
-  subject_id <- all_data$subject_id[i]  
+  # Keep the subject_id and group from the data
+  subject_id <- all_data_E2$subject_id[i]  
+  group <- all_data_E2$group[i]
   
-  # Compare recalled words to presented words for each position
+  # Compare each presented word to the list of recalled words
   for (j in 1:num_items) {
-    if (!is.na(recalled_words[[j]]) && recalled_words[[j]] == presented_words[[j]]) {
-      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 1  
+    # Ensure presented word is not NA before performing comparison
+    if (!is.na(presented_words[[j]])) {
+      if (any(presented_words[[j]] == recalled_words, na.rm = TRUE)) {
+        recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 1  # Correct recall
+      } else {
+        recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  # Incorrect recall
+      }
     } else {
-      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  
+      recall_data$correct_recall_1y_0n[(i - 1) * num_items + j] <- 0  # If the presented word is NA, mark as incorrect
     }
+    
+    # Store other information
     recall_data$condition[(i - 1) * num_items + j] <- condition  
     recall_data$subject_id[(i - 1) * num_items + j] <- subject_id  
+    recall_data$group[(i - 1) * num_items + j] <- group  
   }
 }
 
@@ -237,24 +281,50 @@ semantic_plot <- ggplot(filter(prop_ALL, condition == "Semantic"),
                         aes(x = position, y = mean_correct_recall_1y_0n, color = group)) +
   geom_line() +
   geom_point() +
-  labs(title = "Serial position curve: Semantic", 
+  labs(title = "Serial position curve: Semantic condition", 
        x = "Presentation position", y = "Proportion of correctly recalled words") +
   scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
   scale_y_continuous(limits = c(0, 1)) +
-  theme_minimal() 
+  scale_color_manual(values = group_colors) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm"))
 
 # Plot for Phonological 
 phono_plot <- ggplot(filter(prop_ALL, condition == "Phono"), 
                      aes(x = position, y = mean_correct_recall_1y_0n, color = group)) +
   geom_line() +
   geom_point() +
-  labs(title = "Serial position curve: Phonological", 
+  labs(title = "Serial position curve: Phonological condition", 
        x = "Presentation position", y = "Proportion of Correctly Recalled Words") +
   scale_x_continuous(breaks = seq(1, num_items, 1), labels = as.integer(seq(1, num_items, 1))) +  
   scale_y_continuous(limits = c(0, 1)) +  
-  theme_minimal()
+  scale_color_manual(values = group_colors) +
+  theme_minimal(base_size = 14) +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  
+    axis.text.y = element_text(size = 12),  
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14),  
+    plot.title = element_text(size = 16, face = "bold"),  
+    legend.title = element_text(size = 14),  
+    legend.text = element_text(size = 12),   
+    strip.text = element_text(size = 14),    
+    plot.margin = margin(1, 1, 1, 1, "cm"))
 
 # Print plots
 print(semantic_plot)
 print(phono_plot)
+
+# Save all_data_E2
+write_xlsx(all_data_E2, "/Users/laurigurguryan/Desktop/FMOA/data/AllData_presented-recalled_E2.xlsx")
 ```
+
