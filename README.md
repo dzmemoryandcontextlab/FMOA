@@ -1,10 +1,11 @@
 # FMOA
 
-This repository contains the code used to analyze the data published in: ****. 
+This repository contains the code used to analyze the FMOA project and the data published in: ****. 
 
 ## Data
 
-The raw data used for all analyses reported in the manuscript can be downloded from: ****.
+The raw data used for all analyses reported in the manuscript can be downloded from: https://osf.io/vwyac/?view_only=43cd9366a21d49448c3771a745c6e284 
+***THIS IS SET TO PRIVATE ATM***
 
 ## Code
 
