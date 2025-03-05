@@ -1,7 +1,7 @@
 ---
 title: "FMOA_markdown"
 author: "Lauri Gurguryan"
-date: "2025-02-12"
+date: "2025-03-5"
 output: 
   html_document:
     theme: journal
@@ -272,8 +272,8 @@ ggplot(summary_stats, aes(x = Group, y = Mean_NumWords, fill = TrialType)) +
     plot.title = element_text(size = 16, face = "bold"),  
     legend.title = element_text(size = 14),  
     legend.text = element_text(size = 12),   
-    strip.text = element_text(size = 14),    # Facet label size
-    plot.margin = margin(1, 1, 1, 1, "cm")  # Add some margin to avoid text cut-off
+    strip.text = element_text(size = 14),     
+    plot.margin = margin(1, 1, 1, 1, "cm")
   )
 
 ```
