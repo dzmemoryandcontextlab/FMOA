@@ -1507,8 +1507,7 @@ ggplot(summary_stats, aes(x = TrialType, y = Mean_NumWords, fill = TrialType)) +
     labels = c("Phonological trials", "Semantic trials")
   ) +
   theme_minimal(base_size = 14) +  
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),   
+  theme(axis.text.x = element_blank(),
     axis.text.y = element_text(size = 12),  
     axis.title.x = element_text(size = 14),  
     axis.title.y = element_text(size = 14),  
