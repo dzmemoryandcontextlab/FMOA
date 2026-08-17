@@ -10,9 +10,10 @@ The raw data used for all analyses reported in the manuscript can be downloded f
 
 The code in this repository is written in R and includes two R Markdown files:
 
-1. **FMOA_Analysis_V2.Rmd**: This file contains the code for all data analyses and for generating figures.
+1. **FMOA_Analysis_V2.Rmd**: This file contains the code for all data analyses and for generating figures for Experiments 1 & 2.
    
 2. **SerialPositionCurve.Rmd**: This file contains the code to compute and plot the serial position curves.
+3. **FMOA-EXP3_analysis.R**: This file contains the code for all data analyses and for generating figures for Experiment 3.
 
 ### Important Notes:
 - **Path configuration**: Please note that paths are hard-coded in the code. You will need to modify these paths to match the correct locations for your local environment when analyzing the data.
