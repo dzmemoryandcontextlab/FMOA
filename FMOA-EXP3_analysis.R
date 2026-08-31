@@ -25,7 +25,7 @@ demographics <- read_csv(
 
 # Clean - select ones to keep & rename 
 demographics <- demographics %>%
-  select(
+  dplyr::select(
     `RecordedDate`,
     study_code,
     D_DOB,
@@ -77,7 +77,7 @@ demographics <- demographics %>%
 # Missing DOB
 missing_DOB <- demographics %>%
   filter(is.na(DOB)) %>%
-  select(SubID, study_code)
+  dplyr::select(SubID, study_code)
 
 print(missing_DOB)
 
@@ -107,7 +107,7 @@ prolific_demographics <- prolific_demographics %>%
 
 # Rename and select - prolific 
 prolific_compare <- prolific_demographics %>%
-  select(
+  dplyr::select(
     `Participant id`,
     Age,
     Sex) %>%
@@ -118,7 +118,7 @@ prolific_compare <- prolific_demographics %>%
 
 # Rename and select - dz lab form 
 dzlab_compare <- demographics %>%
-  select(
+  dplyr::select(
     SubID,
     AgeAtTest,
     gender) %>%
@@ -206,13 +206,13 @@ keep_cols <- c(
 
 # Clean df with only columns we want
 alldata_clean <- alldata %>%
-  select(any_of(keep_cols))
+ dplyr::select(any_of(keep_cols))
 
 # Add age group to experiment data
 alldata_clean <- alldata_clean %>%
   left_join(
     demographics %>%
-      select(SubID, AgeGroup),
+     dplyr::select(SubID, AgeGroup),
     by = c("participant" = "SubID"))
 
 # Number of  participants
@@ -260,13 +260,13 @@ missing_agegroup <- alldata_clean %>%
   # Add DZ Lab age
   left_join(
     demographics %>%
-      select(SubID, AgeAtTest, DOB),
+     dplyr::select(SubID, AgeAtTest, DOB),
     by = c("participant" = "SubID")) %>%
   
   # Add Prolific age
   left_join(
     prolific_compare %>%
-      select(SubID, Age_prolific),
+     dplyr::select(SubID, Age_prolific),
     by = c("participant" = "SubID")) %>%
   
   # Use DZ Lab age when available otherwise use Prolific 
@@ -285,17 +285,17 @@ missing_agegroup
 alldata_clean <- alldata_clean %>%
   left_join(
     missing_agegroup %>%
-      select(participant, AgeGroup_recovered) %>%
+     dplyr::select(participant, AgeGroup_recovered) %>%
       distinct(participant, .keep_all = TRUE),
     by = "participant") %>%
   mutate(
     AgeGroup = coalesce(AgeGroup, AgeGroup_recovered)) %>%
-  select(-AgeGroup_recovered)
+ dplyr::select(-AgeGroup_recovered)
 
 # Report for manuscript who was recovered 
 recovered_agegroup <- missing_agegroup %>%
   filter(!is.na(AgeGroup_recovered)) %>%
-  select(
+ dplyr::select(
     participant,
     expName,
     Age_prolific,
@@ -308,7 +308,7 @@ cat("Participants whose age group was recovered from Prolific:",
 # MATH CHECK df #
 #################
 math_check <- alldata_clean %>%
-  select(
+ dplyr::select(
     participant,
     AgeGroup,
     expName,
@@ -349,7 +349,7 @@ cat("Participants scoring below 75%:", paste(math_exclude$participant, collapse 
 # STUDY DF #
 ############
 STUDY_data <- alldata_clean %>%
-  select(
+ dplyr::select(
     participant,
     AgeGroup,
     expName,
@@ -366,7 +366,7 @@ STUDY_data <- alldata_clean %>%
 # TEST DF #
 ###########
 TEST_data <- alldata_clean %>%
-  select(
+ dplyr::select(
     participant,
     AgeGroup,
     expName,
@@ -510,7 +510,7 @@ cat("Number of participants AFTER excluding:",n_distinct(alldata_clean$participa
 # STUDY DF - CLEAN #
 ####################
 STUDY_data_final <- alldata_clean %>%
-  select(
+ dplyr::select(
     participant,
     AgeGroup,
     expName,
@@ -538,7 +538,7 @@ STUDY_data_final <- STUDY_data_final %>%
 # TEST DF - CLEAN #
 ###################
 TEST_data_final <- alldata_clean %>%
-  select(
+ dplyr::select(
     participant,
     AgeGroup,
     expName,
@@ -562,7 +562,7 @@ TEST_data_final <- alldata_clean %>%
 
 # Create lookup table based on STUDY linking each studied word to its sublist
 study_sublist_lookup <- STUDY_data_final %>%
-  select(
+ dplyr::select(
     participant,
     list_id,
     study_word,
@@ -673,7 +673,7 @@ final_participants <- alldata_clean %>%
 final_demographics <- final_participants %>%
   left_join(
     demographics %>%
-      select(
+     dplyr::select(
         SubID,
         AgeAtTest,
         gender,
@@ -683,7 +683,7 @@ final_demographics <- final_participants %>%
     by = c("participant" = "SubID")) %>%
   left_join(
     prolific_compare %>%
-      select(SubID, Age_prolific),
+     dplyr::select(SubID, Age_prolific),
     by = c("participant" = "SubID")) %>%
   mutate(
     AgeAtTest = as.numeric(AgeAtTest),
@@ -738,7 +738,9 @@ accuracy_rm_model <- aov_ez(
   between = "AgeGroup",
   within = c("condition", "sublist"),
   data = accuracy_rm_data,
-  type = 3)
+  type = 3,
+  anova_table = list(es = "pes")
+)
 
 accuracy_rm_model
 
@@ -766,7 +768,9 @@ accuracy_rm_model <- aov_ez(
   between = "AgeGroup",
   within = c("condition", "sublist"),
   data = accuracy_rm_data,
-  type = 3)
+  type = 3,
+  anova_table = list(es = "pes")
+)
 
 accuracy_rm_model
 
@@ -857,7 +861,9 @@ hit_rm_model <- aov_ez(
   between = "AgeGroup",
   within = c("condition", "sublist"),
   data = hit_rm_data,
-  type = 3)
+  type = 3,
+  anova_table = list(es = "pes")
+)
 
 hit_rm_model
 
@@ -918,22 +924,22 @@ ggplot(old_accuracy_lag_data,
     color = NA) +
   facet_wrap(~AgeGroup) +
   labs(
-    title = "Hits across study-test lag",
+    title = "Hit probability across study-test lag",
     x = "Study–test lag",
-    y = "Hits",
-    color = "List Context",
-    fill = "List Context") +
+    y = "Hit probability",
+    color = "List context",
+    fill = "List context") +
   scale_color_manual(
     values = c(
-      "phonological" = "#08306B",
-      "semantic" = "#9ECAE1"),
+      "phonological" = "#0072B2",
+      "semantic" = "#E69F00"),
     labels = c(
       "phonological" = "Phonological",
       "semantic" = "Semantic")) +
   scale_fill_manual(
     values = c(
-      "phonological" = "#08306B",
-      "semantic" = "#9ECAE1"),
+      "phonological" = "#0072B2",
+      "semantic" = "#E69F00"),
     labels = c(
       "phonological" = "Phonological",
       "semantic" = "Semantic")) +
@@ -943,7 +949,8 @@ ggplot(old_accuracy_lag_data,
   theme_classic() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
-    strip.text = element_text(size = 12, face = "bold"))
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "bottom")
 
 ################
 # FALSE ALARMS #
@@ -968,7 +975,8 @@ fa_rm_model <- aov_ez(
   between = "AgeGroup",
   within = c("condition", "sublist"),
   data = fa_rm_data,
-  type = 3)
+  type = 3,
+  anova_table = list(es = "pes"))
 
 fa_rm_model
 
@@ -987,11 +995,10 @@ emmeans(fa_rm_model, ~ condition * sublist)
 
 pairs(emmeans(fa_rm_model, ~ condition | sublist), adjust = "holm")
 
-##################3#######
-## TABLE OF RAW E3 DATA ##
-##################3#######
+
+# AVERAGE PER INDIVIDUAL LIST 
 recognition_counts <- TEST_data_final %>%
-  group_by(participant, AgeGroup, condition, sublist) %>%
+  group_by(participant, AgeGroup, condition, list_id, sublist) %>%
   summarise(
     Hits = sum(
       correct_response == "old" & participant_response == "old",
@@ -1009,7 +1016,9 @@ recognition_counts <- TEST_data_final %>%
       correct_response == "new" & participant_response == "old",
       na.rm = TRUE),
     
-    .groups = "drop") %>%
+    .groups = "drop"
+  ) %>%
+  
   group_by(AgeGroup, condition, sublist) %>%
   summarise(
     Hit_M = mean(Hits),
@@ -1025,22 +1034,81 @@ recognition_counts <- TEST_data_final %>%
     FA_SD = sd(False_Alarms),
     
     n = n(),
-    .groups = "drop") %>%
+    .groups = "drop"
+  ) %>%
+  
   mutate(
     across(
       c(Hit_M, Hit_SD,
         Miss_M, Miss_SD,
         CR_M, CR_SD,
         FA_M, FA_SD),
-      ~ round(.x, 2)))
+      ~ round(.x, 2)
+    ))
 
 recognition_counts
+
+############################
+# HIT & FALSE ALARM RATES #
+############################
+
+# Calculate rates for each participant × condition × sublist
+recognition_rates_subject <- TEST_data_final %>%
+  group_by(participant, AgeGroup, condition, sublist) %>%
+  summarise(
+    
+    # Hits and old trials
+    Hits = sum(
+      correct_response == "old" & participant_response == "old",
+      na.rm = TRUE),
+    
+    Old_Trials = sum(
+      correct_response == "old",
+      na.rm = TRUE),
+    
+    # False alarms and new trials
+    False_Alarms = sum(
+      correct_response == "new" & participant_response == "old",
+      na.rm = TRUE),
+    
+    New_Trials = sum(
+      correct_response == "new",
+      na.rm = TRUE),
+    
+    .groups = "drop"
+  ) %>%
+  mutate(
+    hit_rate = Hits / Old_Trials,
+    false_alarm_rate = False_Alarms / New_Trials
+  )
+
+# Mean and SD across participants
+recognition_rates <- recognition_rates_subject %>%
+  group_by(AgeGroup, condition, sublist) %>%
+  summarise(
+    Hit_M = mean(hit_rate, na.rm = TRUE),
+    Hit_SD = sd(hit_rate, na.rm = TRUE),
+    
+    FA_M = mean(false_alarm_rate, na.rm = TRUE),
+    FA_SD = sd(false_alarm_rate, na.rm = TRUE),
+    
+    n = n(),
+    
+    .groups = "drop"
+  ) %>%
+  mutate(
+    across(
+      c(Hit_M, Hit_SD, FA_M, FA_SD),
+      ~ round(.x, 2)
+    ))
+
+recognition_rates
 
 ###############
 # POST SURVEY #
 ##############
 post_survey <- alldata_clean %>%
-  select(
+ dplyr::select(
     participant,
     AgeGroup,
     PS_Q1_debrief_response_box.text,
